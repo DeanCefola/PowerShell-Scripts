@@ -1,0 +1,9 @@
+﻿Get-PhysicalDisk$disks = Get-PhysicalDisk |? {$_.CanPool -eq $true}$PoolName = 'TieredPool'New-StoragePool `    -StorageSubSystemFriendlyName "Windows*" `    -FriendlyName $PoolName `    -PhysicalDisks $disks$Prem_ssd_disks = get-physicaldisk | ? -Property size -EQ 256GB$Prem_ssd_disks | Set-PhysicalDisk -MediaType SCM$STan_ssd_disks = get-physicaldisk | ? -Property size -EQ 512GB$STan_ssd_disks | Set-PhysicalDisk -MediaType SSD$hdd_disks = get-physicaldisk | ? -Property size -EQ 4095GB$hdd_disks | Set-PhysicalDisk -MediaType HDD$Prem_tier = New-StorageTier `                -StoragePoolFriendlyName $PoolName `                -FriendlyName Prem_Tier `                -MediaType SCM$ssd_tier = New-StorageTier `                -StoragePoolFriendlyName $PoolName `                -FriendlyName SSD_Tier `                -MediaType SSD$hdd_tier = New-StorageTier `                -StoragePoolFriendlyName $PoolName `                -FriendlyName HDD_Tier `                -MediaType HDD$vd1 = New-VirtualDisk `            -StoragePoolFriendlyName $PoolName `            -FriendlyName TieredPool`            -StorageTiers @($Prem_tier, $ssd_tier, $hdd_tier) `            -StorageTierSizes @(500GB, 1000GB, 8000GB) `            -ResiliencySettingName Simple `            -ProvisioningType fixed `            -FaultDomainAwareness PhysicalDisk `            -Usage Unrestricted `            -AutoWriteCacheSize Initialize-Disk `    -Number (get-disk | select -Last 1).number `    -PartitionStyle GPTNew-Volume `
+    -StoragePoolFriendlyName $PoolName `
+    -FriendlyName $PoolName `
+    -AccessPath "M:" `
+    -ResiliencySettingName "Simple" `
+    -ProvisioningType "Fixed" `
+    -StorageTiers @($Prem_tier, $ssd_tier, $hdd_tier) `
+    -StorageTierSizes 499GB, 999GB, 7999GB `
+    -FileSystem NTFS
