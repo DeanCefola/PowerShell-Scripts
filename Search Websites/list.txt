@@ -1,0 +1,5 @@
+https://www.youtube.com/AzureAcademy
+https://azure.microsoft.com/en-us/overview/what-is-saas/
+https://en.wikipedia.org/wiki/PowerShell
+https://azure.microsoft.com/en-us/overview/what-is-paas/
+https://azure.microsoft.com/en-us/overview/what-is-iaas/
