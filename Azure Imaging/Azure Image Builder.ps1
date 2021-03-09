@@ -57,12 +57,16 @@ $idenityNamePrincipalId=$(Get-AzUserAssignedIdentity -ResourceGroupName $imageRe
 
 $aibRoleImageCreationUrl  = "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/solutions/12_Creating_AIB_Security_Roles/aibRoleImageCreation.json"
 $aibRoleImageCreationPath = "aibRoleImageCreation.json"
-Invoke-WebRequest -Uri $aibRoleImageCreationUrl -OutFile $aibRoleImageCreationPath -UseBasicParsing
+Invoke-WebRequest `
+    -Uri $aibRoleImageCreationUrl `
+    -OutFile $aibRoleImageCreationPath `
+    -UseBasicParsing
 ((Get-Content -path $aibRoleImageCreationPath -Raw) -replace '<subscriptionID>',$subscriptionID) | Set-Content -Path $aibRoleImageCreationPath
 ((Get-Content -path $aibRoleImageCreationPath -Raw) -replace '<rgName>', $imageResourceGroup) | Set-Content -Path $aibRoleImageCreationPath
 ((Get-Content -path $aibRoleImageCreationPath -Raw) -replace 'Azure Image Builder Service Image Creation Role', $imageRoleDefName) | Set-Content -Path $aibRoleImageCreationPath
 New-AzRoleDefinition `
     -InputFile  ./aibRoleImageCreation.json
+Wait-Event -Timeout 30
 New-AzRoleAssignment `
     -ObjectId $idenityNamePrincipalId `
     -RoleDefinitionName $imageRoleDefName `
