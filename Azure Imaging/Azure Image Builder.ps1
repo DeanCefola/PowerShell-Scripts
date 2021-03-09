@@ -21,7 +21,7 @@ Get-AzProviderFeature `
 #    Set up environment and variables    #
 ##########################################
 $currentAzContext   = Get-AzContext
-$imageResourceGroup = 'wvdImageDemoRg'
+$imageResourceGroup = 'AIB-Rg'
 $location           = 'eastus'
 $subscriptionID     = $currentAzContext.Subscription.Id
 $imageTemplateName  = 'wvd10ImageTemplate01'
