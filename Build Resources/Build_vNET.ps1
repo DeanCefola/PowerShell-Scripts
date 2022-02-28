@@ -14,7 +14,7 @@
 ##################
 #    Check RG    #
 ##################
-$RGName = 'vnetMgr031'
+$RGName = 'vnetMgr'
 If (!(Get-AzResourceGroup -name $VNetName -ErrorAction SilentlyContinue)) {
     Write-Host -ForegroundColor Red -BackgroundColor Black "Creating Resource Group"
     New-AzResourceGroup -Name $RGName -Location 'eastus'
