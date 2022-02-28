@@ -2,26 +2,20 @@
 # Creation Date: 10-17-2017
 # Usage      : AZURE - Create ExpressRoute
 
-#**************************************************************************
+#***************************************************************************************
 # Date                         Version      Changes
-#------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------
 # 10/17/2017                     1.0        Intial Version
 # 08/20/2019                     2.0        Add OpenVPN  
-#***************************************************************************
+# 08/12/2021                     2.1        Updated Cert Names / Added 2 year Expiration
+#****************************************************************************************
 #
 #>
-
-###################
-#    Variables    #
-###################
-$CertLocation = 'C:\temp\VPN'
-$Cert = 'AAClient.pfx'
-$CertName = "$CertLocation$Cert"
-
-
+ 
 ###############################################
 #    Create a self-signed root certificate    #
 ###############################################
+$CertLocation = "c:\temp\vpn"
 if((Test-Path -Path $CertLocation -ErrorAction SilentlyContinue) -eq $false){
     mkdir $CertLocation
     cd $CertLocation
@@ -30,12 +24,13 @@ else {
     cd $CertLocation
 }
 $cert = New-SelfSignedCertificate -Type Custom -KeySpec Signature `
-    -Subject "CN=AARoot" `
+    -Subject "CN=2021Root" `
     -KeyExportPolicy Exportable `
     -HashAlgorithm sha256 `
     -KeyLength 2048 `
     -CertStoreLocation "Cert:\CurrentUser\My" `
-    -KeyUsageProperty Sign -KeyUsage CertSign
+    -KeyUsageProperty Sign -KeyUsage CertSign `
+    -NotAfter (Get-Date).AddYears(2)
 
 
 #######################################
@@ -45,13 +40,14 @@ New-SelfSignedCertificate `
     -Type Custom `
     -DnsName P2SChildCert `
     -KeySpec Signature `
-    -Subject "CN=AAClient" `
+    -Subject "CN=2021Client" `
     -KeyExportPolicy Exportable `
     -HashAlgorithm sha256 `
     -KeyLength 2048 `
     -CertStoreLocation "Cert:\CurrentUser\My" `
     -Signer $cert `
-    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.2")
+    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.2") `
+    -NotAfter (Get-Date).AddYears(2)
     
 
 #############################
@@ -61,29 +57,29 @@ $RootCert = (Get-ChildItem `
     -Path "Cert:\CurrentUser\My\"`
     | Where-Object `
     -Property subject `
-    -Match AARoot)
+    -Match 2021Root)
 $ClientCert = (Get-ChildItem `
     -Path "Cert:\CurrentUser\My\"`
     | Where-Object `
     -Property subject `
-    -Match AAClient)
+    -Match 2021Client)
 Export-Certificate `
     -Type CERT `
     -Cert $RootCert `
-    -FilePath "$CertLocation\AARootTemp.cer"
+    -FilePath "$CertLocation\2021RootTemp.cer"
 Export-Certificate `
     -Type CERT `
     -Cert $ClientCert `
-    -FilePath "$CertLocation\AAClient.cer"
-C:\windows\system32\certutil.exe -encode "$CertLocation\AARootTemp.cer" 'AARoot.cer'
-Get-Content $CertLocation\AARoot.cer
+    -FilePath "$CertLocation\2021Client.cer"
+C:\windows\system32\certutil.exe -encode "$CertLocation\2021RootTemp.cer" '2021Root.cer'
+Get-Content $CertLocation\2021Root.cer
 $SecurePassword = Read-Host `
     -Prompt "Enter Password to Export Cert with Private Key" `
     -AsSecureString
 $ThumbPrint = $ClientCert.Thumbprint
 $ExportPrivateCertPath = "Cert:\CurrentUser\My\$ThumbPrint"
 Export-PfxCertificate `
-    -FilePath "C:\temp\VPN\AAClient.pfx" `
+    -FilePath "C:\temp\VPN\2021Client.pfx" `
     -Password $SecurePassword `
     -Cert $ExportPrivateCertPath
     
@@ -133,7 +129,7 @@ Invoke-WebRequest `
 #    Extract Private Key    #
 #############################
 . $profile
-$OpenSSLArgs = "pkcs12 -in C:\temp\vpn\AAClient.pfx -nodes -out c:\temp\vpn\profileinfo.txt"
+$OpenSSLArgs = "pkcs12 -in C:\temp\vpn\2021Client.pfx -nodes -out c:\temp\vpn\profileinfo.txt"
 Start-Process openssl $OpenSSLArgs
 
 

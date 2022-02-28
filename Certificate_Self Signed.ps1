@@ -12,7 +12,13 @@
 #
 #>
 
-$cert = New-SelfSignedCertificate -CertStoreLocation Cert:\LocalMachine\My -DnsName <"ENTER-DNS-NAME"> -Type CodeSigningCert -Subject <"ENTER-SUBJECT-NAME"> -Verbose
+$cert = New-SelfSignedCertificate `
+    -CertStoreLocation Cert:\LocalMachine\My `
+    -DnsName <"ENTER-DNS-NAME"> `
+    -Type CodeSigningCert `
+    -Subject <"ENTER-SUBJECT-NAME"> `
+    -notafter (Get-Date).AddMonths(24) `
+    -Verbose
 $cert
 $secPassword = ConvertTo-SecureString -String '<TYPE-PASSWORD>' -Force -AsPlainText
 $certPath = "Cert:\LocalMachine\My\$($Cert.Thumbprint)"

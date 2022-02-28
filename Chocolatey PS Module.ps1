@@ -16,7 +16,7 @@
 #    Check PSGallery Repository    #
 ####################################
 $PSRepo = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
-if ($PSRepo -eq $fale){    
+if ($PSRepo -eq $false){    
     write-host 'Add PSGallery Repository'
     Register-PSRepository -Default
     Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -Verbose    
