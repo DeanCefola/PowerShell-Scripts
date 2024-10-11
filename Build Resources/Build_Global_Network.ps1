@@ -99,17 +99,15 @@ foreach ($hub in $HubNETs) {
         -Zone @('1', '2', '3')
     
     #Deploy Azure Bastion
+    $HubVNET = Get-AzVirtualNetwork -Name $hub.name -ResourceGroupName $hub.RGName
     New-AzBastion `
         -ResourceGroupName $hub.RGName `
         -Name "$($hub.Name)-Bastion" `
-        -VirtualNetworkRgName $hub.RGName `
-        -VirtualNetworkName $hub.Name `
-        -PublicIpAddressRgName $bastionPIP.ResourceGroupName `
-        -PublicIpAddressName $bastionPIP.Name `
-        -Sku Basic
+        -VirtualNetwork $HubVNET `
+        -PublicIpAddress $bastionPIP `
+        -Sku Basic 
     
-    # Deploy Azure Firewall
-    $HubVNET = Get-AzVirtualNetwork -Name $hub.name -ResourceGroupName $hub.RGName
+    # Deploy Azure Firewall    
     New-AzFirewall `
         -ResourceGroupName $hub.RGName `
         -Name "$($hub.Name)-Firewall" `
