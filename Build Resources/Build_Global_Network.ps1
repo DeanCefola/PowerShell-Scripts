@@ -104,8 +104,7 @@ foreach ($hub in $HubNETs) {
         -ResourceGroupName $hub.RGName `
         -Name "$($hub.Name)-Bastion" `
         -VirtualNetwork $HubVNET `
-        -PublicIpAddress $bastionPIP `
-        -Sku Basic 
+        -PublicIpAddress $bastionPIP
     
     # Deploy Azure Firewall    
     New-AzFirewall `
