@@ -41,9 +41,9 @@ foreach ($RG in $RGs) {
 #    hub Input Array    #
 #########################
 $HubNETs = @(
-    @{Name="Expert-Hub-eus2";Location='eastus2';AddressPrefix='10.0.0.0/16';RGName='Expert-vnets-eus2';IdentitySubnet='10.0.1.0/24';BastionSubnet='10.0.2.0/26';FirewallSubnet='10.0.3.0/26'}
-    @{Name="Expert-Hub-uks";Location='uksouth';AddressPrefix='172.18.0.0/16';RGName='Expert-vnets-uks';IdentitySubnet='172.18.1.0/24';BastionSubnet='172.18.2.0/26';FirewallSubnet='172.18.3.0/26'}
-    @{Name="Expert-Hub-jpe";Location='japaneast';AddressPrefix='192.168.0.0/16';RGName='Expert-vnets-jpe';IdentitySubnet='192.168.1.0/24';BastionSubnet='192.168.2.0/26';FirewallSubnet='192.168.3.0/26'}
+    @{Name="Expert-Hub-eus2";Location='eastus2';AddressPrefix='10.0.0.0/16';RGName='Expert-vnets-eus2';IdentitySubnet='10.0.1.0/24';DNS=@('10.0.1.4','172.18.1.5','192.168.1.5');BastionSubnet='10.0.2.0/26';FirewallSubnet='10.0.3.0/26';FirewallMgtSubnet='10.0.3.64/26'}
+    @{Name="Expert-Hub-uks";Location='uksouth';AddressPrefix='172.18.0.0/16';RGName='Expert-vnets-uks';IdentitySubnet='172.18.1.0/24';DNS=@('10.0.1.4','172.18.1.5','192.168.1.5');BastionSubnet='172.18.2.0/26';FirewallSubnet='172.18.3.0/26';FirewallMgtSubnet='172.18.3.64/26'}
+    @{Name="Expert-Hub-jpe";Location='japaneast';AddressPrefix='192.168.0.0/16';RGName='Expert-vnets-jpe';IdentitySubnet='192.168.1.0/24';DNS=@('10.0.1.4','172.18.1.5','192.168.1.5');BastionSubnet='192.168.2.0/26';FirewallSubnet='192.168.3.0/26';FirewallMgtSubnet='192.168.3.64/26'}
 )
 
 
@@ -54,6 +54,7 @@ foreach ($hub in $HubNETs) {
     $IdentitySubnet = New-AzVirtualNetworkSubnetConfig -Name 'Identity' -AddressPrefix $hub.IdentitySubnet
     $BastionSubnet = New-AzVirtualNetworkSubnetConfig -Name 'AzureBastionSubnet' -AddressPrefix $hub.BastionSubnet
     $FirewallSubnet = New-AzVirtualNetworkSubnetConfig -Name 'AzureFirewallSubnet' -AddressPrefix $hub.FirewallSubnet
+    $FirewallMgtSubnet = New-AzVirtualNetworkSubnetConfig -Name 'AzureFirewallManagementSubnet' -AddressPrefix $hub.FirewallMgtSubnet
     
     # Deploy Hub network
     $vnet = New-AzVirtualNetwork `
@@ -61,7 +62,8 @@ foreach ($hub in $HubNETs) {
         -ResourceGroupName $hub.RGName `
         -Location $hub.Location `
         -AddressPrefix $hub.AddressPrefix `
-        -Subnet $IdentitySubnet, $BastionSubnet, $FirewallSubnet
+        -Subnet $IdentitySubnet, $BastionSubnet, $FirewallSubnet, $FirewallMgtSubnet `
+        -DnsServer $hub.DNS
 
     # Create Public IP for Azure Bastion
     $bastionPIP = New-AzPublicIpAddress `
@@ -69,7 +71,10 @@ foreach ($hub in $HubNETs) {
         -ResourceGroupName $hub.RGName `
         -Location $hub.Location `
         -AllocationMethod Static `
-        -Sku Standard
+        -Sku Standard `
+        -Tier Regional `
+        -IpAddressVersion IPv4 `
+        -Zone @('1', '2', '3')
 
     # Create Public IP for Azure Firewall
     $firewallPIP = New-AzPublicIpAddress `
@@ -77,8 +82,22 @@ foreach ($hub in $HubNETs) {
         -Name "$($hub.Name)-Firewall-PIP" `
         -Location $hub.Location `
         -AllocationMethod Static `
-        -Sku Standard
-        
+        -Sku Standard `
+        -Tier Regional `
+        -IpAddressVersion IPv4 `
+        -Zone @('1', '2', '3')
+    
+    # Create Public IP for Azure Firewall Management
+    $firewallMgrPIP = New-AzPublicIpAddress `
+        -ResourceGroupName $hub.RGName `
+        -Name "$($hub.Name)-Firewall-MGR-PIP" `
+        -Location $hub.Location `
+        -AllocationMethod Static `
+        -Sku Standard `
+        -Tier Regional `
+        -IpAddressVersion IPv4 `
+        -Zone @('1', '2', '3')
+    
     #Deploy Azure Bastion
     New-AzBastion `
         -ResourceGroupName $hub.RGName `
@@ -90,13 +109,16 @@ foreach ($hub in $HubNETs) {
         -Sku Basic
     
     # Deploy Azure Firewall
-    $HubVNET =Get-AzVirtualNetwork -Name $hub.name -ResourceGroupName $hub.RGName
+    $HubVNET = Get-AzVirtualNetwork -Name $hub.name -ResourceGroupName $hub.RGName
     New-AzFirewall `
         -ResourceGroupName $hub.RGName `
         -Name "$($hub.Name)-Firewall" `
         -Location $hub.Location `
         -VirtualNetwork $HubVNET `
-        -PublicIpAddress $firewallPIP
+        -PublicIpAddress $firewallPIP `
+        -ManagementPublicIpAddress $firewallMgrPIP `
+        -Zone @('1', '2', '3') `
+        -SkuTier Basic
 }
 
 
